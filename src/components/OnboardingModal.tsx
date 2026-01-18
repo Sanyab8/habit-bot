@@ -280,7 +280,7 @@ export const OnboardingModal = ({ isOpen, onComplete }: OnboardingModalProps) =>
                 {currentStep === 0 && (
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { icon: '🧠', label: 'AI Learning' },
+                      { icon: '🧠', label: 'Motion Tracking' },
                       { icon: '🔥', label: 'Daily Streaks' },
                       { icon: '🎯', label: 'Rep Tracking' },
                     ].map((feature) => (
