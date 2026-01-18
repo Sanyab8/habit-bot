@@ -35,7 +35,7 @@ export const HabitHeader = ({ habitName, petName, onReset }: HabitHeaderProps) =
         >
           {/* <Target className="w-7 h-7 text-primary" /> */}
           <span className="text-3xl">
-            <img src="" alt="" />
+            <img src="public\favicon.png" alt="Icon Cat image" />
           </span>
         </motion.div>
         <div>
