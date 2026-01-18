@@ -15,18 +15,18 @@ const getMilestones = (petName: string) => [
     emoji: '✨🔊',
   },
   {
-    id: 'color-change',
-    day: 3,
-    title: 'Changes Color on Interaction',
-    description: `${petName} changes color when you interact with it!`,
-    emoji: '🌈',
-  },
-  {
     id: 'wag-tail',
-    day: 7,
+    day: 3,
     title: 'Wags Tail & New Sound',
     description: `${petName} wags its tail and unlocks a new excited sound!`,
     emoji: '🐕💫',
+  },
+  {
+    id: 'color-change',
+    day: 7,
+    title: 'Changes Color on Interaction',
+    description: `${petName} changes color when you interact with it!`,
+    emoji: '🌈',
   },
   {
     id: 'petting',
