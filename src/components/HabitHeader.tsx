@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Settings, RotateCcw, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import myIcon from '@/assets/my-icon.png';
+import myIcon from './assets/my-icon.png';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +34,7 @@ export const HabitHeader = ({ habitName, petName, onReset }: HabitHeaderProps) =
           transition={{ type: 'spring', delay: 0.2 }}
           className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center float"
         >
-        <img src={myIcon} alt="Habpet" className="w-7 h-7 object-contain" />
-
+          <img src={myIcon} />
           
         </motion.div>
         <div>
