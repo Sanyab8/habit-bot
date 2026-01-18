@@ -24,46 +24,45 @@ export const CountdownTimer = ({
 
   const isComplete = completedCount >= dailyGoal;
 
-  useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date();
-      const [deadlineHours, deadlineMinutes] = deadlineTime.split(':').map(Number);
+useEffect(() => {
+  const updateTimer = () => {
+    const now = new Date();
+    const [deadlineHours, deadlineMinutes] = deadlineTime.split(':').map(Number);
+    
+    const deadline = new Date();
+    deadline.setHours(deadlineHours, deadlineMinutes, 0, 0);
+    
+    let diff = deadline.getTime() - now.getTime();
+    
+    // If deadline has passed
+    if (diff <= 0) {
+      setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 });
       
-      const deadline = new Date();
-      deadline.setHours(deadlineHours, deadlineMinutes, 0, 0);
-      
-      let diff = deadline.getTime() - now.getTime();
-      
-      // If deadline has passed
-      if (diff <= 0) {
-        setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 });
+      // Only trigger expiry once, and only if not complete
+      if (!hasExpired && !isComplete) {
+        setHasExpired(true);
+        setShowExpiredAnimation(true);
+        onDeadlineExpired?.();
         
-        // Only trigger expiry once, and only if not complete
-        if (!hasExpired && !isComplete) {
-          setHasExpired(true);
-          setShowExpiredAnimation(true);
-          onDeadlineExpired?.();
-          
-          // Hide animation after 5 seconds
-          setTimeout(() => {
-            setShowExpiredAnimation(false);
-          }, 5000);
-        }
-        return;
+        // Hide animation after 5 seconds
+        setTimeout(() => {
+          setShowExpiredAnimation(false);
+        }, 5000);
       }
+      return;
+    }
 
-      setTimeRemaining({
-        hours: Math.floor(diff / 3600000),
-        minutes: Math.floor((diff % 3600000) / 60000),
-        seconds: Math.floor((diff % 60000) / 1000),
-      });
-    };
+    setTimeRemaining({
+      hours: Math.floor(diff / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+    });
+  };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [deadlineTime, hasExpired, isComplete, onDeadlineExpired]);
-
+  updateTimer();
+  const interval = setInterval(updateTimer, 1000);
+  return () => clearInterval(interval);
+}, [deadlineTime, onDeadlineExpired]); // Remove hasExpired and isComplete from dependencies
   // Reset expired state at deadline time (new period starts)
   useEffect(() => {
     const checkNewPeriod = () => {
