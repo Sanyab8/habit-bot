@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, CameraOff, Loader2, Check, AlertCircle, Sparkles, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,19 @@ export const CameraView = ({
   const [justCompleted, setJustCompleted] = useState(false);
   const [matchStreak, setMatchStreak] = useState(0);
 
+  // Keep frequently-changing detection signals in refs so the countdown timer
+  // isn't constantly reset by fast matchScore updates.
+  const matchZoneRef = useRef(false);
+  const isActiveRef = useRef(false);
+
+  useEffect(() => {
+    // Timer only ticks when match is 99%+ (UI shows 100%)
+    const isInMatchZone = state.matchScore >= 99;
+
+    matchZoneRef.current = isInMatchZone;
+    isActiveRef.current = state.isActive;
+  }, [state.matchScore, state.isActive]);
+
   const isAllComplete = completedCount >= dailyGoal;
 
   // Cleanup camera on unmount only
@@ -64,7 +77,7 @@ export const CameraView = ({
 
   // Track consecutive matches with stickiness
   useEffect(() => {
-    const isInMatchZone = state.patternMatch || (state.matchScore >= 70 && state.motionLevel >= 1);
+    const isInMatchZone = state.patternMatch || (state.matchScore >= 70 && state.motionLevel >= 0.3);
     if (isInMatchZone) {
       setMatchStreak(prev => Math.min(prev + 1, 180));
     } else {
@@ -72,46 +85,67 @@ export const CameraView = ({
     }
   }, [state.patternMatch, state.matchScore, state.motionLevel]);
 
-  // Monitor for sustained matching to start rep timer
+  // Start the rep timer immediately when the UI shows ~100% match
   useEffect(() => {
     if (isAllComplete || justCompleted) return;
+    if (repTimer !== null) return;
 
-    const readyToTrigger = matchStreak > 12 && state.matchScore > 50;
+    // The UI rounds the score, so treat 99%+ as "100%" for instant start.
+    const instantTrigger = state.matchScore >= 99;
+    const sustainedTrigger = matchStreak > 12 && state.matchScore > 50;
 
-    if (readyToTrigger) {
-      if (repTimer === null) {
-        setRepTimer(movementDuration);
-      }
-      return;
-    }
-
-    if (repTimer !== null && matchStreak < 2) {
-      setRepTimer(null);
+    if (instantTrigger || sustainedTrigger) {
+      setRepTimer(movementDuration);
     }
   }, [matchStreak, state.matchScore, isAllComplete, justCompleted, repTimer, movementDuration]);
 
-  // Rep timer countdown - complete immediately when timer hits 0
-  useEffect(() => {
-    if (repTimer === null) return;
-    if (repTimer === 0) {
-      // Complete the rep immediately
-      setJustCompleted(true);
-      setMatchStreak(0);
-      setRepTimer(null);
-      onActionDetected();
-      
-      setTimeout(() => {
-        setJustCompleted(false);
-      }, 2000);
-      return;
-    }
+  // Rep timer countdown (ticks once per second, pauses immediately if match drops below 99%)
+  const isTimerRunning = repTimer !== null && repTimer > 0;
 
-    const timer = setTimeout(() => {
-      setRepTimer(repTimer - 1);
+  useEffect(() => {
+    if (!isTimerRunning) return;
+
+    const interval = window.setInterval(() => {
+      if (!isActiveRef.current) return;
+
+      // Pause immediately if match drops below 99%
+      if (!matchZoneRef.current) return;
+
+      setRepTimer(prev => (prev === null ? null : Math.max(prev - 1, 0)));
     }, 1000);
 
-    return () => clearTimeout(timer);
+    return () => window.clearInterval(interval);
+  }, [isTimerRunning]);
+
+  // Complete immediately when timer hits 0
+  useEffect(() => {
+    if (repTimer !== 0) return;
+
+    setJustCompleted(true);
+    setMatchStreak(0);
+    setRepTimer(null);
+    onActionDetected();
   }, [repTimer, onActionDetected]);
+
+  // Auto-hide the "Rep Complete" overlay (kept separate so it won't be cancelled
+  // by repTimer state changes).
+  useEffect(() => {
+    if (!justCompleted) return;
+
+    const t = window.setTimeout(() => {
+      setJustCompleted(false);
+    }, 2000);
+
+    return () => window.clearTimeout(t);
+  }, [justCompleted]);
+
+  // Safety: if the day resets and completedCount returns to 0, clear any leftover UI state.
+  useEffect(() => {
+    if (completedCount !== 0) return;
+    setJustCompleted(false);
+    setRepTimer(null);
+    setMatchStreak(0);
+  }, [completedCount]);
 
   const handleToggleCamera = async () => {
     if (state.isActive) {
