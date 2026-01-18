@@ -4,7 +4,9 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  base: "/habit-bot/",
+  base: "/",
+    // base: "/habit-bot/",
+
 
   server: {
     host: "::",
